@@ -27,5 +27,5 @@ echo "[start] starting worker (background)"
 pnpm -C apps/worker start &
 
 echo "[start] starting next (foreground)"
-exec pnpm -C apps/web start -- -p "${PORT:-3000}"
+exec pnpm -C apps/web exec next start -p "${PORT:-3000}"
 
