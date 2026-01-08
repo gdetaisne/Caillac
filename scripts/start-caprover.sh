@@ -24,9 +24,8 @@ for i in $(seq 1 30); do
 done
 
 echo "[start] starting worker (background)"
-node apps/worker/dist/index.js &
+pnpm -C apps/worker start &
 
 echo "[start] starting next (foreground)"
-cd apps/web
-exec node ../../node_modules/next/dist/bin/next start -p "${PORT:-3000}"
+exec pnpm -C apps/web start -- -p "${PORT:-3000}"
 

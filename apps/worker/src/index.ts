@@ -1,10 +1,11 @@
 import "dotenv/config";
 
 import { prisma } from "@hg/db";
+import type { Job, Prisma } from "@hg/db";
 import { env } from "@hg/env";
 
-import { extractPdfPagesText } from "./pdf/extractPdfPagesText";
-import { extractFactsFromPage } from "./facts/extractors";
+import { extractPdfPagesText } from "./pdf/extractPdfPagesText.js";
+import { extractFactsFromPage } from "./facts/extractors.js";
 
 import { readFile } from "node:fs/promises";
 import { hostname } from "node:os";
@@ -14,6 +15,7 @@ async function claimNextJob() {
   const workerId = hostname();
 
   return await prisma.$transaction(async (tx) => {
+    const ttx = tx as unknown as Prisma.TransactionClient;
     const job = await tx.job.findFirst({
       where: {
         status: "QUEUED",
@@ -24,7 +26,7 @@ async function claimNextJob() {
     });
     if (!job) return null;
 
-    const res = await tx.job.updateMany({
+    const res = await ttx.job.updateMany({
       where: { id: job.id, status: "QUEUED", lockedAt: null },
       data: { status: "RUNNING", lockedAt: now, lockedBy: workerId, attempts: { increment: 1 } }
     });
@@ -34,9 +36,10 @@ async function claimNextJob() {
   });
 }
 
-async function runJob(job: any) {
+async function runJob(job: Job) {
   if (job.type === "INGEST_DOCUMENT") {
-    const documentId = String(job.payloadJson?.documentId ?? "");
+    const payload = job.payloadJson as any;
+    const documentId = String(payload?.documentId ?? "");
     if (!documentId) throw new Error("Missing documentId");
 
     const doc = await prisma.document.findUnique({
@@ -77,7 +80,8 @@ async function runJob(job: any) {
   }
 
   if (job.type === "EXTRACT_FACTS") {
-    const caseFileId = String(job.payloadJson?.caseFileId ?? job.caseFileId ?? "");
+    const payload = job.payloadJson as any;
+    const caseFileId = String(payload?.caseFileId ?? job.caseFileId ?? "");
     if (!caseFileId) throw new Error("Missing caseFileId");
 
     await prisma.fact.deleteMany({
@@ -137,7 +141,7 @@ async function runJob(job: any) {
 }
 
 async function tick() {
-  const job = await claimNextJob();
+  const job = (await claimNextJob()) as Job | null;
   if (!job) return;
 
   try {

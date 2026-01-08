@@ -1,13 +1,11 @@
-FROM node:24-bookworm-slim AS build
-
+FROM node:24-bookworm-slim
 WORKDIR /app
-
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable
 
-ARG CAPROVER_CACHEBUST=1
-RUN echo "CAPROVER_CACHEBUST=${CAPROVER_CACHEBUST}"
+ARG CAPROVER_GIT_COMMIT_SHA=dev
+RUN echo "CAPROVER_GIT_COMMIT_SHA=${CAPROVER_GIT_COMMIT_SHA}"
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps ./apps
@@ -17,15 +15,7 @@ COPY scripts ./scripts
 RUN pnpm install --frozen-lockfile
 RUN pnpm -r build
 
-FROM node:24-bookworm-slim AS runtime
-WORKDIR /app
 ENV NODE_ENV=production
-
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
-
-RUN corepack enable
-
-COPY --from=build /app /app
 
 EXPOSE 3000
 CMD ["bash", "./scripts/start-caprover.sh"]
