@@ -20,6 +20,9 @@ const EnvSchema = z.object({
   // Jobs en DB (polling)
   JOB_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(2000),
 
+  // Chat (optionnel)
+  OPENAI_API_KEY: z.string().min(1).optional(),
+
   EXTRACTOR_VERSION: z.string().min(1).default("v1")
 });
 

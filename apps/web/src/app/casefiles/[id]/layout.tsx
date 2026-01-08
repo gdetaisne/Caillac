@@ -21,6 +21,12 @@ export default async function CaseFileLayout({
         <a className="underline" href={`/casefiles/${id}/timeline`}>
           Timeline
         </a>
+        <a className="underline" href={`/casefiles/${id}/context`}>
+          Contexte
+        </a>
+        <a className="underline" href={`/casefiles/${id}/chat`}>
+          Chat
+        </a>
       </nav>
       {children}
     </div>
