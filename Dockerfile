@@ -6,6 +6,9 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-c
 
 RUN corepack enable
 
+ARG CAPROVER_CACHEBUST=1
+RUN echo "CAPROVER_CACHEBUST=${CAPROVER_CACHEBUST}"
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps ./apps
 COPY packages ./packages
