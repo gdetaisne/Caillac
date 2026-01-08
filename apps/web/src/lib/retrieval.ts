@@ -33,11 +33,48 @@ export async function retrievePageSnippets(args: {
     LIMIT ${limit};
   `;
 
-  return rows.map((r) => ({
+  if (rows.length) {
+    return rows.map((r) => ({
+      documentId: r.documentId,
+      pageNumber: r.pageNumber,
+      text: r.snippet,
+      rank: Number(r.rank ?? 0)
+    }));
+  }
+
+  // Fallback (quand la FTS ne matche pas): ILIKE sur quelques tokens.
+  const tokens = query
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]+/gu, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 3)
+    .slice(0, 6);
+  if (!tokens.length) return [];
+
+  const likeRows = await prisma.$queryRaw<
+    Array<{ documentId: string; pageNumber: number; snippet: string }>
+  >`
+    SELECT
+      dp."documentId" as "documentId",
+      dp."pageNumber" as "pageNumber",
+      LEFT(REGEXP_REPLACE(dp."text", '\\s+', ' ', 'g'), 300) as "snippet"
+    FROM "DocumentPage" dp
+    JOIN "Document" d ON d."id" = dp."documentId"
+    WHERE
+      d."caseFileId" = ${caseFileId}
+      AND d."status" = 'INGESTED'
+      AND (
+        ${tokens[0] ? prisma.$queryRaw`dp."text" ILIKE ${"%" + tokens[0] + "%"}` : prisma.$queryRaw`false`}
+      )
+    LIMIT ${limit};
+  `;
+
+  // NB: on garde simple (un seul token) pour éviter la complexité SQL dynamique.
+  return likeRows.map((r, i) => ({
     documentId: r.documentId,
     pageNumber: r.pageNumber,
     text: r.snippet,
-    rank: Number(r.rank ?? 0)
+    rank: 0.001 * (limit - i)
   }));
 }
 

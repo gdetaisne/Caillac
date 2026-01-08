@@ -145,6 +145,23 @@ export function extractFactsFromPage(input: {
     });
   }
 
+  // Date de constitution/immatriculation SCI (heuristique simple: même phrase)
+  for (const m of t.matchAll(
+    /\bSCI\b[\s\S]{0,180}?\b(constitu(?:ée|é)|créée|immatricul(?:ée|é)e?|formation)\b[\s\S]{0,180}?\b(\d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{1,2}\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)\s+\d{4})\b/gi
+  )) {
+    const rawDate = String(m[2] ?? "");
+    const dt = parseFrenchDate(rawDate);
+    if (!dt) continue;
+    const { excerpt, locatorJson } = clipExcerpt(t, m.index ?? 0, (m.index ?? 0) + m[0].length);
+    out.push({
+      factType: "company:incorporation_date",
+      label: "Date de constitution (SCI)",
+      valueDate: dt,
+      confidence: 0.9,
+      source: { documentId, pageNumber, excerpt, locatorJson }
+    });
+  }
+
   // Parts SCI: "830 parts", "600 parts"
   for (const m of t.matchAll(/\b(\d{1,6})\s+parts?\b/gi)) {
     const n = Number(m[1]);
