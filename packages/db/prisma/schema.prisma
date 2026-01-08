@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DocumentStatus {
+  UPLOADED
+  INGESTING
+  INGESTED
+  FAILED
+}
+
+enum DocumentStorage {
+  LOCAL
+}
+
+enum JobType {
+  INGEST_DOCUMENT
+  EXTRACT_FACTS
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum EntityType {
+  person
+  asset
+  company
+}
+
+enum FactStatus {
+  extracted
+  validated
+  rejected
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  auditLogs AuditLog[]
+  caseFiles CaseFile[]  @relation("CaseFileOwner")
+}
+
+model CaseFile {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation("CaseFileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  documents Document[]
+  entities  Entity[]
+  facts     Fact[]
+  jobs      Job[]
+}
+
+model Document {
+  id         String         @id @default(cuid())
+  caseFileId String
+  caseFile   CaseFile       @relation(fields: [caseFileId], references: [id], onDelete: Cascade)
+
+  filename   String
+  mimetype   String
+  sizeBytes  Int?
+  sha256Hex  String?
+  storage    DocumentStorage @default(LOCAL)
+  localPath  String
+  uploadedAt DateTime       @default(now())
+  status     DocumentStatus @default(UPLOADED)
+  error      String?
+
+  pages DocumentPage[]
+  factSources FactSource[]
+}
+
+model Job {
+  id         String    @id @default(cuid())
+  caseFileId String
+  caseFile   CaseFile  @relation(fields: [caseFileId], references: [id], onDelete: Cascade)
+
+  type   JobType
+  status JobStatus @default(QUEUED)
+
+  payloadJson Json
+
+  runAt     DateTime @default(now())
+  attempts  Int      @default(0)
+  lastError String?
+
+  lockedAt DateTime?
+  lockedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, runAt])
+  @@index([caseFileId, type])
+}
+
+model DocumentPage {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  pageNumber Int
+  text       String
+  ocrUsed    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([documentId, pageNumber])
+}
+
+model Entity {
+  id         String    @id @default(cuid())
+  caseFileId String
+  caseFile   CaseFile  @relation(fields: [caseFileId], references: [id], onDelete: Cascade)
+
+  type EntityType
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  facts Fact[]
+
+  @@index([caseFileId, type])
+}
+
+model Fact {
+  id         String   @id @default(cuid())
+  caseFileId String
+  caseFile   CaseFile @relation(fields: [caseFileId], references: [id], onDelete: Cascade)
+
+  entityId String?
+  entity   Entity? @relation(fields: [entityId], references: [id], onDelete: SetNull)
+
+  factType    String
+  label       String
+  valueString String?
+  valueNumber Float?
+  valueDate   DateTime?
+  unit        String?
+  currency    String?
+
+  confidence Float
+  status     FactStatus @default(extracted)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sources FactSource[]
+
+  @@index([caseFileId, factType])
+  @@index([entityId])
+}
+
+model FactSource {
+  id         String   @id @default(cuid())
+  factId     String
+  fact       Fact     @relation(fields: [factId], references: [id], onDelete: Cascade)
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  pageNumber Int
+  excerpt    String   @db.VarChar(300)
+  locatorJson Json?
+
+  extractedAt DateTime @default(now())
+  extractorVersion String @default("v1")
+
+  @@index([documentId, pageNumber])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action     String
+  objectType String
+  objectId   String
+
+  beforeJson Json?
+  afterJson  Json?
+  createdAt  DateTime @default(now())
+
+  @@index([objectType, objectId])
+}
+

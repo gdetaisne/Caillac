@@ -1,0 +1,22 @@
+{
+  "name": "heritage-geraud",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "pnpm": {
+    "overrides": {
+      "ioredis": "5.9.0"
+    }
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "postinstall": "pnpm -C packages/db prisma:generate"
+  }
+}
+

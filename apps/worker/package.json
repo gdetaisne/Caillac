@@ -1,0 +1,24 @@
+{
+  "name": "@hg/worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@hg/db": "workspace:*",
+    "@hg/env": "workspace:*",
+    "dotenv": "^16.4.7",
+    "pdfjs-dist": "^4.10.38",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
+
