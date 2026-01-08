@@ -2,9 +2,12 @@ import { prisma } from "@hg/db";
 
 import { UploadDocuments } from "./UploadDocuments";
 
-export default async function CaseFileDocumentsPage({ params }: { params: { id: string } }) {
+export const dynamic = "force-dynamic";
+
+export default async function CaseFileDocumentsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const documents = await prisma.document.findMany({
-    where: { caseFileId: params.id },
+    where: { caseFileId: id },
     orderBy: { uploadedAt: "desc" },
     select: { id: true, filename: true, mimetype: true, uploadedAt: true, status: true, error: true }
   });
@@ -13,12 +16,12 @@ export default async function CaseFileDocumentsPage({ params }: { params: { id: 
     <main className="space-y-4">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Documents</h1>
-        <p className="text-sm text-neutral-600">Dossier: {params.id}</p>
+        <p className="text-sm text-neutral-600">Dossier: {id}</p>
       </header>
 
       <section className="rounded-lg border bg-white p-4">
         <h2 className="mb-2 text-lg font-medium">Upload</h2>
-        <UploadDocuments caseFileId={params.id} />
+        <UploadDocuments caseFileId={id} />
       </section>
 
       <section className="rounded-lg border bg-white p-4">
@@ -37,7 +40,7 @@ export default async function CaseFileDocumentsPage({ params }: { params: { id: 
                     </div>
                     {d.error ? <div className="mt-1 text-xs text-red-700">Erreur: {d.error}</div> : null}
                   </div>
-                  <a className="text-sm font-medium text-blue-700 underline" href={`/casefiles/${params.id}/documents/${d.id}`}>
+                  <a className="text-sm font-medium text-blue-700 underline" href={`/casefiles/${id}/documents/${d.id}`}>
                     Pages
                   </a>
                 </div>

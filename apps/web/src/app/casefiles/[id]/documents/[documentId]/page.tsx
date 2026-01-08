@@ -1,12 +1,15 @@
 import { prisma } from "@hg/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function DocumentPagesPage({
   params
 }: {
-  params: { id: string; documentId: string };
+  params: Promise<{ id: string; documentId: string }>;
 }) {
+  const { id, documentId } = await params;
   const doc = await prisma.document.findFirst({
-    where: { id: params.documentId, caseFileId: params.id },
+    where: { id: documentId, caseFileId: id },
     select: { id: true, filename: true, status: true, error: true }
   });
   if (!doc) {

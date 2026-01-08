@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { getOrCreatePublicOwnerId } from "@/lib/publicOwner";
 
+export const dynamic = "force-dynamic";
+
 const CreateCaseFileSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1).optional()

@@ -3,9 +3,12 @@ import { prisma } from "@hg/db";
 import { ExtractFactsButton } from "./ExtractFactsButton";
 import { FactsTableClient } from "./FactsTableClient";
 
-export default async function CaseFileFactsPage({ params }: { params: { id: string } }) {
+export const dynamic = "force-dynamic";
+
+export default async function CaseFileFactsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const facts = await prisma.fact.findMany({
-    where: { caseFileId: params.id },
+    where: { caseFileId: id },
     orderBy: [{ valueDate: "asc" }, { createdAt: "desc" }],
     select: {
       id: true,
@@ -36,12 +39,12 @@ export default async function CaseFileFactsPage({ params }: { params: { id: stri
     <main className="space-y-4">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Faits</h1>
-        <p className="text-sm text-neutral-600">Dossier: {params.id}</p>
+        <p className="text-sm text-neutral-600">Dossier: {id}</p>
       </header>
 
       <section className="rounded-lg border bg-white p-4">
         <h2 className="mb-2 text-lg font-medium">Extraction</h2>
-        <ExtractFactsButton caseFileId={params.id} />
+        <ExtractFactsButton caseFileId={id} />
       </section>
 
       <section className="rounded-lg border bg-white p-4">

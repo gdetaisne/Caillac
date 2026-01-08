@@ -14,14 +14,15 @@ const PatchFactSchema = z.object({
   currency: z.string().optional().nullable()
 });
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await ctx.params;
     const body = await req.json().catch(() => null);
     const parsed = PatchFactSchema.safeParse(body);
     if (!parsed.success) return jsonError("Invalid body", 400);
 
     const existing = await prisma.fact.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { sources: { select: { id: true } } }
     });
     if (!existing) return jsonError("Not found", 404);

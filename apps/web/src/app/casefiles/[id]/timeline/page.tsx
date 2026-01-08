@@ -1,9 +1,10 @@
-export default async function CaseFileTimelinePage({ params }: { params: { id: string } }) {
+export default async function CaseFileTimelinePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <main className="space-y-4">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Timeline</h1>
-        <p className="text-sm text-neutral-600">Dossier: {params.id}</p>
+        <p className="text-sm text-neutral-600">Dossier: {id}</p>
       </header>
 
       <section className="rounded-lg border bg-white p-4">

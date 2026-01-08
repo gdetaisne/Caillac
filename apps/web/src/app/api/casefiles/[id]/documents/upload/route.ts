@@ -13,9 +13,9 @@ function safeName(filename: string) {
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const caseFileId = params.id;
+    const { id: caseFileId } = await ctx.params;
 
     const caseFile = await prisma.caseFile.findUnique({
       where: { id: caseFileId },

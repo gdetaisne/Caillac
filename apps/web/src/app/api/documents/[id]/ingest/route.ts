@@ -2,10 +2,11 @@ import { prisma } from "@hg/db";
 
 import { jsonError, serverError } from "@/lib/http";
 
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await ctx.params;
     const doc = await prisma.document.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, status: true, caseFileId: true }
     });
     if (!doc) return jsonError("Not found", 404);
